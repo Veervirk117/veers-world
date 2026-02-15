@@ -1,8 +1,8 @@
-import React, { useRef, useLayoutEffect, Suspense, useState } from "react";
+import React, { useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { Canvas } from "@react-three/fiber";
 // import { Perf } from "r3f-perf";
-import { OrbitControls, useGLTF, useCursor } from "@react-three/drei";
+import { OrbitControls, useGLTF, useCursor, useProgress } from "@react-three/drei";
 import NightSky from "./sky"; 
 import CameraSetup from "./cameraSetup";
 import Raymarching from "./Raymarching.jsx";
@@ -191,23 +191,182 @@ function Model({ url, onLoad, onLogoClick, hitboxTargets = LOGO_HITBOX_TARGETS }
 
 
 // Main App component
+const CAMERA_ANIM_DURATION = 6;
+const ENTRANCE_MIN_DURATION_MS = 3000;
+
 export default function App() {
   const [modelLoaded, setModelLoaded] = useState(false);
   const [cameraAnimDone, setCameraAnimDone] = useState(false);
   const [animReady, setAnimReady] = useState(false);
   const [activeLogo, setActiveLogo] = useState(null);
+  const [entranceState, setEntranceState] = useState("idle"); // idle | entering | done
+  const [entranceHidden, setEntranceHidden] = useState(false);
+  const [, forceEntranceRender] = useState(0);
+  const clickAudioRef = useRef(null);
+  const whooshAudioRef = useRef(null);
+  const whooshFadeRef = useRef(null);
+  const entranceStartRef = useRef(null);
+  const entranceTimerRef = useRef(null);
+  const { progress } = useProgress();
 
   React.useEffect(() => {
-    if (!modelLoaded) return;
-    setAnimReady(true);
-  }, [modelLoaded]);
+    if (modelLoaded && entranceState === "done") {
+      setAnimReady(true);
+    }
+  }, [modelLoaded, entranceState]);
+
+  useEffect(() => {
+    if (entranceState !== "entering" || !modelLoaded) return;
+    const start = entranceStartRef.current ?? performance.now();
+    const elapsed = performance.now() - start;
+    const remaining = Math.max(ENTRANCE_MIN_DURATION_MS - elapsed, 0);
+
+    if (entranceTimerRef.current) {
+      clearTimeout(entranceTimerRef.current);
+    }
+
+    entranceTimerRef.current = setTimeout(() => {
+      setEntranceState("done");
+      const t = setTimeout(() => setEntranceHidden(true), 900);
+      entranceTimerRef.current = t;
+    }, remaining);
+
+    return () => {
+      if (entranceTimerRef.current) {
+        clearTimeout(entranceTimerRef.current);
+      }
+    };
+  }, [entranceState, modelLoaded]);
+
+  useEffect(() => {
+    if (entranceState !== "entering") return;
+    const id = setInterval(() => forceEntranceRender((tick) => tick + 1), 100);
+    return () => clearInterval(id);
+  }, [entranceState]);
+
+  useEffect(() => {
+    return () => {
+      if (whooshFadeRef.current) {
+        cancelAnimationFrame(whooshFadeRef.current);
+      }
+      if (entranceTimerRef.current) {
+        clearTimeout(entranceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const playClickSound = () => {
+    try {
+      if (!clickAudioRef.current) {
+        clickAudioRef.current = new Audio("/click.mp3");
+      }
+      const audio = clickAudioRef.current;
+      audio.currentTime = 0;
+      audio.volume = 1;
+      audio.play();
+    } catch (err) {
+      console.warn("Audio click failed:", err);
+    }
+  };
+
+  const playWhooshSound = () => {
+    try {
+      if (!whooshAudioRef.current) {
+        whooshAudioRef.current = new Audio("/whoosh.mp3");
+      }
+      const audio = whooshAudioRef.current;
+      audio.currentTime = 0;
+      audio.volume = 0.9;
+      audio.play();
+
+      if (whooshFadeRef.current) {
+        cancelAnimationFrame(whooshFadeRef.current);
+      }
+
+      const start = performance.now();
+      const durationMs = CAMERA_ANIM_DURATION * 1000;
+      const fade = (now) => {
+        const t = Math.min((now - start) / durationMs, 1);
+        audio.volume = 0.9 * (1 - t);
+        if (t < 1 && !audio.paused) {
+          whooshFadeRef.current = requestAnimationFrame(fade);
+        } else {
+          audio.pause();
+        }
+      };
+      whooshFadeRef.current = requestAnimationFrame(fade);
+    } catch (err) {
+      console.warn("Audio whoosh failed:", err);
+    }
+  };
+
+  const handleEnter = () => {
+    if (entranceState !== "idle") return;
+    entranceStartRef.current = performance.now();
+    setCameraAnimDone(false);
+    setAnimReady(false);
+    playClickSound();
+    playWhooshSound();
+    setEntranceState("entering");
+  };
   const handleLogoClick = (label) => {
     const details = LOGO_DETAILS[label];
     if (!details) return;
     setActiveLogo({ key: label, ...details });
   };
+  const elapsed =
+    entranceState === "entering" && entranceStartRef.current
+      ? performance.now() - entranceStartRef.current
+      : 0;
+  const minProgress = Math.min((elapsed / ENTRANCE_MIN_DURATION_MS) * 100, 100);
+  const displayProgress =
+    entranceState === "entering" ? Math.max(progress, minProgress) : progress;
+
   return (
     <div className="app-root">
+      {!entranceHidden && (
+        <div
+          className={`entrance ${entranceState === "entering" ? "entrance--entering" : ""} ${
+            entranceState === "done" ? "entrance--done" : ""
+          }`}
+        >
+          <div className="entrance__bg" />
+          <div className="entrance__content">
+            <div className="entrance__globe-wrap">
+              <img className="entrance__globe" src="/Favicon.ico" alt="Sci-fi globe" />
+            </div>
+            <div className="entrance__title">Welcome to Veer&apos;s World</div>
+            <div className="entrance__subtitle">
+             
+            </div>
+            <div className="entrance__tagline">You are about to enter a custom 3D city built using React Three Fiber 🤯, click on each building logo to view my own unique experiences. Press Enter to continue.</div>
+            <button
+              type="button"
+              className="entrance__button"
+              onClick={handleEnter}
+              disabled={entranceState !== "idle"}
+            >
+              {entranceState === "entering" ? "Initializing" : "Enter"}
+            </button>
+            <div className="entrance__status">
+              {entranceState === "entering" && !modelLoaded && "Loading city assets..."}
+              {entranceState === "entering" && modelLoaded && "Arrival complete."}
+            </div>
+            {entranceState !== "idle" && (
+              <div className="entrance__loading">
+                <div className="entrance__loading-bar">
+                  <div
+                    className="entrance__loading-fill"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
+                </div>
+                <div className="entrance__loading-text">{Math.round(displayProgress)}%</div>
+              </div>
+            )}
+          </div>
+          <div className="entrance__ship" />
+        </div>
+      )}
       
     
       <Canvas camera={{ fov: 45, near: 0.1, far: 1000 }} dpr={[1.5, 2]} >
@@ -216,6 +375,7 @@ export default function App() {
       {/* Set initial camera position immediately, but only play animation after model loads */}
       {!cameraAnimDone && (
         <CameraAnim
+          duration={CAMERA_ANIM_DURATION}
           keyframes={[
             { position: [-1.3, 1.03, -4.65], rotation: [-1.55, 0.01, 0.21] },
             { position: [-1.25, 0.98, -4.37], rotation: [-1.27, 0.06, 0.18] },
