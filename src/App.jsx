@@ -333,7 +333,7 @@ export default function App() {
           <div className="entrance__bg" />
           <div className="entrance__content">
             <div className="entrance__globe-wrap">
-              <img className="entrance__globe" src="/Favicon.ico" alt="Sci-fi globe" />
+              <img className="entrance__globe" src="/favicon.png" alt="Sci-fi globe" />
             </div>
             <div className="entrance__title">Welcome to Veer&apos;s World</div>
             <div className="entrance__subtitle">
