@@ -9,6 +9,10 @@ html, body, #root {
   overflow: hidden;
 }
 
+.app-root * {
+  user-select: none;
+}
+
 /* Make the canvas fill the root container */
 canvas {
   display: block;

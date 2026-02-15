@@ -61,7 +61,7 @@ const LOGO_HITBOX_TARGETS = [
   { key: "Humano_01Business_01_30K_001002" },
 ];
 
-function LogoHitbox({ size, position, label, onClick }) {
+function LogoHitbox({ size, position, label, onClick, enabled = true }) {
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
 
@@ -73,6 +73,7 @@ function LogoHitbox({ size, position, label, onClick }) {
       onPointerOut={() => setHovered(false)}
       onPointerDown={(e) => {
         e.stopPropagation();
+        if (!enabled) return;
         onClick?.(label);
       }}
     >
@@ -83,7 +84,7 @@ function LogoHitbox({ size, position, label, onClick }) {
 }
 
 // Model loader component
-function Model({ url, onLoad, onLogoClick, hitboxTargets = LOGO_HITBOX_TARGETS }) {
+function Model({ url, onLoad, onLogoClick, hitboxTargets = LOGO_HITBOX_TARGETS, hitboxEnabled = true }) {
   const gltf = useGLTF(url);
   const scene = React.useMemo(() => gltf.scene.clone(true), [gltf.scene]);  
   const ref = useRef();
@@ -183,6 +184,7 @@ function Model({ url, onLoad, onLogoClick, hitboxTargets = LOGO_HITBOX_TARGETS }
           size={hitbox.size}
           position={hitbox.center}
           onClick={onLogoClick}
+          enabled={hitboxEnabled}
         />
       ))}
     </group>
@@ -310,6 +312,7 @@ export default function App() {
     setEntranceState("entering");
   };
   const handleLogoClick = (label) => {
+    if (!cameraAnimDone) return;
     const details = LOGO_DETAILS[label];
     if (!details) return;
     setActiveLogo({ key: label, ...details });
@@ -401,6 +404,7 @@ export default function App() {
           url="/model.glb"
           onLoad={() => setModelLoaded(true)}
           onLogoClick={handleLogoClick}
+          hitboxEnabled={cameraAnimDone}
         />
       </Suspense>
      <NightSky /> 
