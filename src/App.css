@@ -64,6 +64,17 @@ canvas {
   font-size: 16px;
 }
 
+.logo-modal a {
+  color: #7ad7ff;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.logo-modal a:hover {
+  color: #b7ecff;
+}
+
 .logo-modal-close {
   appearance: none;
   border: 1px solid #3a3a3a;

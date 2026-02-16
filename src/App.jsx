@@ -16,16 +16,16 @@ const LOGO_DETAILS = {
   BCR_logo: {
     title: "BCR",
     meta: ["Created: 2024", "Origin: Sydney", "Type: Finance"],
-    description: "Add BCR project description here.",
+    description: "Institutional trading intern | traded assets across commodities and equities, learnt institutional specific liquidity and market making techniques. Delivered market analysis video for clients via social media.",
     tech: ["Python", "PyTorch", "Metatrader 5", "TradingView"],
     skills: ["Client Communication", "System Thinking"],
   },
   IBM_logo: {
     title: "IBM",
     meta: ["Created: 2025", "Origin: Global", "Type: Enterprise"],
-    description: "Add IBM project description here.",
-    tech: ["Ollama", "Watsonx.AI", "Langchain", "Kubernetes", "IBM Cloud", "GCP"],
-    skills: ["Architecture Design", "Problem Solving"],
+    description: "AI Engineering Intern | I learnt IBM specific technology in depth, the WatsonX.AI suite and IBM Hybrid cloud. All my projects included aimed at using AI to reduce time and and increase productivity. I dove deep into how to create and train a model from scratch using Ollama, optimise its parameters to minimise errors and add speech to text modulation. My most critical learning was relationship building, 'Always figure out how to deliver value fast' was my mentor's key teaching I incorporated",
+    tech: ["Ollama", "Watsonx.AI", "Langchain", "Kubernetes", "IBM Cloud", "GCP", "YAML"],
+    skills: ["Architecture Design", "Problem Solving", "Client Relationship Building"],
   },
   HITC_logo: {
     title: "Head In The Clouds (v 1.0)",
@@ -38,7 +38,8 @@ const LOGO_DETAILS = {
   Mindsafari_logo: {
     title: "MindSafari",
     meta: ["Created: 2025", "Origin: Sydney", "Type: Startup"],
-    description: "www.mindsafari.com.au",
+    description:
+      "Founder | A platform I built because I felt schools lack the ability to provide deep care and learning for each student. Supported by research that shows teachers are overburdened, as students outnumber teachers 30 to 1 & spent countless hours on just admin work.\nClick the link www.mindsafari.com.au for more details!",
     tech: ["MERN", "GCP", "Open AI API", "Github"],
     skills: ["Product Design", "User Research"],
   },
@@ -432,7 +433,28 @@ export default function App() {
 
             <div>
               <div className="logo-section-title">Project Description</div>
-              <p>{activeLogo.description}</p>
+              <p>
+                {activeLogo.description.split("\n").map((line, index, all) => (
+                  <React.Fragment key={`${activeLogo.key}-desc-${index}`}>
+                    {line.includes("www.mindsafari.com.au") ? (
+                      <>
+                        {line.replace("www.mindsafari.com.au", "").trim()}
+                        {" "}
+                        <a
+                          href="https://www.mindsafari.com.au"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          www.mindsafari.com.au
+                        </a>
+                      </>
+                    ) : (
+                      line
+                    )}
+                    {index < all.length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </p>
             </div>
 
             <div>
