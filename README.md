@@ -4,3 +4,6 @@ This project is built using React Three Fiber and custom 3D modelling via Blende
 
 NOTE: PLEASE USE A LAPTOP/DESKTOP FOR THE BEST VIEWING EXPERIENCE 
 - https://veers-world.vercel.app/
+
+
+ps: can you spot the hidden rubber chicken? 
